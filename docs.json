@@ -3,8 +3,8 @@
   "theme": "mint",
   "name": "Y Managers Documentation",
   "colors": {
-    "primary": "#FC925C",
-    "light": "#07C983",
+    "primary": "#F67942",
+    "light": "#FC925C",
     "dark": "#15803D"
   },
   "favicon": "/favicon.svg",
