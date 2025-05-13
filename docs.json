@@ -22,6 +22,12 @@
             ]
           },
           {
+            "group": "Tutorials",
+            "pages": [
+              "entra-sso-config"
+            ]
+          },
+          {
             "group": "Essentials",
             "pages": [
               "essentials/markdown",
