@@ -1,4 +1,77 @@
 ---
 title: "SSO with Microsoft Entra ID"
-description: "Configure Single Sign-On (SSO) with Microsoft Entra ID"
+description: "Use Entra ID as identity provider (IdP) for a seamless login"
 ---
+
+Entra ID (formerly known as Azure AD) is a robust and secure cloud identity platform used by many organizations.
+
+Entra ID integration provides Single Sign-On (SSO) capacity:
+
+- Users create a single set of credentials with Entra ID
+- Entra ID lets users log in to many applications, including Y Managers, with these credentials
+- Entra ID keeps users' login details separate from their Y Managers usage data
+
+Entra ID never "sees" or records what happens in Y Managers application. The Entra ID integration only provides access to their Y Managers account. Adding Entra ID as a login option means Y Managers admins can manage users in a centralized location.
+
+Y Managers is using a, what is called, "multi-tenant" application configuration, which allows users from any Entra ID to authenticate to Y Managers without the need for the organization to register an "enterprise application" in own Entra ID tenant. Howerver, there is still a need to register an application to allow Y Managers to verify domain ownership by pulling the domain names registered in organization's Entra ID.
+
+## Required Permissions
+
+**Entra ID** - Any user with application management permission (Global Admin, Application Admin)
+**Y Managers** - Any user with "Admin" system role
+
+## Entra ID configuration
+
+ 1. In Entra ID portal ([portal.azure.com](http://portal.azure.com)) navigate to **Microsoft Entra ID**
+ 2. In left side menu, click on **App registrations**
+ 3. Click **\+ New registration**
+ 4. Provide the **Name** of the application (e.g. _Y Managers API_) and leave everything else as default of blank.
+
+    ![entra-reg-app](/images/entra-reg-app.png)
+ 5. Click **Register**
+ 6. In the **Overview** page, copy the values for the **Directory (tenant) ID** and the **Application (client) id** value.
+ 7. Expand the **Manage** menu section
+ 8. Click **Certificates & secrets**
+ 9. Click **\+ New client secret**
+10. Enter the Description (e.g _Y Managers app_) and choose the Expiration date.
+11. Click **Add**
+12. Copy the **Value** of the newly created secret (this is known as the Client Secret)
+13. Click **API Permissions** menu item
+14. Click **\+ Add a permission**
+15. Click **Microsoft Graph**
+16. Click **Application permissions**
+17. In the search bar type _Directory.Read.All_
+18. Expand Directory and check the Directory.Read.All permission
+
+    ![entra-api-permission](/images/entra-api-permission.png)
+19. Click **Add permissions**
+20. Click **Grant admin consent for your \<organization name\>**
+21. Click **Yes** to cofirm granting admin consent
+22. Ensure the Directory.Read.All permission now has Status as Granted
+
+You should now have three values recorded: Tenat ID, Client ID and Client Secret
+
+## Y Managers configuration
+
+1. In Y Managers application expand **Settings** menu and click **Admin**
+2. Click **Single Sign-On (SSO)** tab
+3. Click the switch to **Enable Single Sign-On (SSO)** or make sure it is already enabled
+4. In the provided fields enter values for Tenat ID, Client ID and Client Secret
+5. When the button **Get domains** appears, click it
+6. A list of Entra ID verified domains should appear in the table below
+
+   ![entra-ym-domains](/images/entra-ym-domains.png)
+7. Click the switches to enable using one or more domains for your organization
+
+### Custom login URL
+
+Your organization's custom SSO login URL is shown on the Y Managers SSO administration page. Once you enable SSO for your organization, users should be directed to this URL. On the login page you will now see a **Login with Microsoft** button.
+
+![entra-custom-loginpage](/images/entra-custom-loginpage.png)
+
+
+The user can click on this button and log in using their Entra ID/Office365 credentials.
+
+When **SSO Only** switch is enabled in the administration page, the user will not have an option to click the **Login with Microsoft** button, but instead will automatically be redirected to login with Microsoft.
+
+_Note: In both cases non-SSO user, such as organization Admins can log in using local login credentials (username/password) either on the custom organization login page, or generic login page _[_https://ymanagers.com/login_](https://ymanagers.com/login)_._
