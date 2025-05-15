@@ -24,7 +24,8 @@
           {
             "group": "Tutorials",
             "pages": [
-              "entraid-sso-config"
+              "entraid-sso-config",
+              "test-page"
             ]
           },
           {
