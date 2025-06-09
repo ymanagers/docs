@@ -1,16 +1,13 @@
 {
   "openapi": "3.1.0",
   "info": {
-    "title": "OpenAPI Plant Store",
-    "description": "A sample API that uses a plant store as an example to demonstrate features in the OpenAPI specification",
-    "license": {
-      "name": "MIT"
-    },
-    "version": "1.0.0"
+    "title": "Y Managers Data API",
+    "version": "1.0.0",
+    "description": "API endpoints for the Y Managers platform, providing access to various data objects like deliverables, deliverables plans, work plans, and activity reports."
   },
   "servers": [
     {
-      "url": "http://sandbox.mintlify.com"
+      "url": "https://ymanagers.com/version-test/api/1.1"
     }
   ],
   "security": [
@@ -19,198 +16,722 @@
     }
   ],
   "paths": {
-    "/plants": {
-      "get": {
-        "description": "Returns all plants from the system that the user has access to",
-        "parameters": [
-          {
-            "name": "limit",
-            "in": "query",
-            "description": "The maximum number of results to return",
-            "schema": {
-              "type": "integer",
-              "format": "int32"
+    "/wf/get-token": {
+      "post": {
+        "summary": "Get authentication token",
+        "operationId": "getToken",
+        "tags": ["Authentication"],
+        "description": "Authenticates a user with email and password to obtain a bearer token for subsequent API calls.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "format": "email",
+                    "example": "apiuser1@exceliant.ca",
+                    "description": "The user's email address."
+                  },
+                  "password": {
+                    "type": "string",
+                    "format": "password",
+                    "example": "A#J88_xq",
+                    "description": "The user's password."
+                  }
+                },
+                "required": ["email", "password"]
+              }
             }
           }
-        ],
+        },
         "responses": {
           "200": {
-            "description": "Plant response",
+            "description": "Successfully obtained token.",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/Plant"
+                  "type": "object",
+                  "properties": {
+                    "status": { "type": "string", "example": "success" },
+                    "response": {
+                      "type": "object",
+                      "properties": {
+                        "token": { "type": "string", "description": "The authentication bearer token." }
+                      }
+                    }
+                  }
+                },
+                "examples": {
+                  "successResponse": {
+                    "value": {
+                      "status": "success",
+                      "response": {
+                        "token": "your_generated_jwt_token_here"
+                      }
+                    }
                   }
                 }
               }
             }
           },
           "400": {
-            "description": "Unexpected error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          }
-        }
-      },
-      "post": {
-        "description": "Creates a new plant in the store",
-        "requestBody": {
-          "description": "Plant to add to the store",
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/NewPlant"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "plant response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Plant"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "unexpected error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
+            "description": "Bad Request or invalid credentials."
           }
         }
       }
     },
-    "/plants/{id}": {
-      "delete": {
-        "description": "Deletes a single plant based on the ID supplied",
+    "/obj/deliverable": {
+      "get": {
+        "summary": "List deliverables (with pagination)",
+        "operationId": "listDeliverables",
+        "tags": ["Deliverables"],
+        "description": "Retrieves a list of deliverables, supporting cursor-based pagination and limit.",
         "parameters": [
           {
-            "name": "id",
-            "in": "path",
-            "description": "ID of plant to delete",
-            "required": true,
+            "name": "cursor",
+            "in": "query",
+            "description": "Cursor for pagination, specifying the starting point for the next set of results.",
+            "required": false,
             "schema": {
               "type": "integer",
-              "format": "int64"
+              "format": "int32",
+              "example": 100
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Maximum number of results to return per page.",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "example": 10
             }
           }
         ],
         "responses": {
-          "204": {
-            "description": "Plant deleted",
-            "content": {}
-          },
-          "400": {
-            "description": "unexpected error",
+          "200": {
+            "description": "A list of deliverables.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Error"
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Deliverable"
+                  }
                 }
               }
             }
+          },
+          "401": {
+            "description": "Unauthorized - Missing or invalid token."
           }
         }
       }
-    }
-  },
-  "webhooks": {
-    "/plant/webhook": {
-      "post": {
-        "description": "Information about a new plant added to the store",
-        "requestBody": {
-          "description": "Plant added to the store",
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/NewPlant"
-              }
+    },
+    "/obj/deliverable/{id}": {
+      "get": {
+        "summary": "Get a specific deliverable",
+        "operationId": "getDeliverableById",
+        "tags": ["Deliverables"],
+        "description": "Retrieves details for a single deliverable by its unique ID.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "The unique ID of the deliverable.",
+            "required": true,
+            "schema": {
+              "type": "string"
             }
           }
-        },
+        ],
         "responses": {
           "200": {
-            "description": "Return a 200 status to indicate that the data was received successfully"
+            "description": "Deliverable details.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Deliverable"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Missing or invalid token."
+          },
+          "404": {
+            "description": "Deliverable not found."
+          }
+        }
+      }
+    },
+    "/obj/task": {
+      "get": {
+        "summary": "List tasks (with filtering)",
+        "operationId": "listTasks",
+        "tags": ["Tasks"],
+        "description": "Retrieves a list of tasks, supporting complex filtering based on constraints.",
+        "parameters": [
+          {
+            "name": "constraints",
+            "in": "query",
+            "description": "JSON string of constraints for filtering tasks. Example: `[{\"key\":\"t-deliverable\",\"constraint_type\":\"equals\",\"value\":\"1736526830140x219040437320286200\"}]`",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A list of tasks.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Task"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Missing or invalid token."
+          }
+        }
+      }
+    },
+    "/obj/task/{id}": {
+      "get": {
+        "summary": "Get a specific task",
+        "operationId": "getTaskById",
+        "tags": ["Tasks"],
+        "description": "Retrieves details for a single task by its unique ID.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "The unique ID of the task.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Task details.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Task"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Missing or invalid token."
+          },
+          "404": {
+            "description": "Task not found."
+          }
+        }
+      }
+    },
+    "/obj/organization": {
+      "get": {
+        "summary": "List organizations",
+        "operationId": "listOrganizations",
+        "tags": ["Organization"],
+        "description": "Retrieves a list of organizations.",
+        "responses": {
+          "200": {
+            "description": "A list of organizations.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Organization"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Missing or invalid token."
+          }
+        }
+      }
+    },
+    "/obj/activity": {
+      "get": {
+        "summary": "List activities",
+        "operationId": "listActivities",
+        "tags": ["Activities"],
+        "description": "Retrieves a list of activities.",
+        "responses": {
+          "200": {
+            "description": "A list of activities.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Activity"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Missing or invalid token."
+          }
+        }
+      }
+    },
+    "/obj/activity/{id}": {
+      "get": {
+        "summary": "Get a specific activity",
+        "operationId": "getActivityById",
+        "tags": ["Activities"],
+        "description": "Retrieves details for a single activity by its unique ID.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "The unique ID of the activity.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Activity details.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Activity"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Missing or invalid token."
+          },
+          "404": {
+            "description": "Activity not found."
+          }
+        }
+      }
+    },
+    "/obj/activity-report": {
+      "get": {
+        "summary": "List activity reports",
+        "operationId": "listActivityReports",
+        "tags": ["Activity Reports"],
+        "description": "Retrieves a list of activity reports.",
+        "responses": {
+          "200": {
+            "description": "A list of activity reports.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ActivityReport"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Missing or invalid token."
+          }
+        }
+      }
+    },
+    "/obj/activity-report/{id}": {
+      "get": {
+        "summary": "Get a specific activity report",
+        "operationId": "getActivityReportById",
+        "tags": ["Activity Reports"],
+        "description": "Retrieves details for a single activity report by its unique ID.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "The unique ID of the activity report.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Activity report details.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ActivityReport"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Missing or invalid token."
+          },
+          "404": {
+            "description": "Activity report not found."
+          }
+        }
+      }
+    },
+    "/obj/deliverables-plan": {
+      "get": {
+        "summary": "List deliverables plans",
+        "operationId": "listDeliverablesPlans",
+        "tags": ["Deliverables Plans"],
+        "description": "Retrieves a list of deliverables plans.",
+        "responses": {
+          "200": {
+            "description": "A list of deliverables plans.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/DeliverablesPlan"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Missing or invalid token."
+          }
+        }
+      }
+    },
+    "/obj/deliverables-plan/{id}": {
+      "get": {
+        "summary": "Get a specific deliverables plan",
+        "operationId": "getDeliverablesPlanById",
+        "tags": ["Deliverables Plans"],
+        "description": "Retrieves details for a single deliverables plan by its unique ID.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "The unique ID of the deliverables plan.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Deliverables plan details.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeliverablesPlan"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Missing or invalid token."
+          },
+          "404": {
+            "description": "Deliverables plan not found."
+          }
+        }
+      }
+    },
+    "/obj/task-note": {
+      "get": {
+        "summary": "List task notes",
+        "operationId": "listTaskNotes",
+        "tags": ["Task Notes"],
+        "description": "Retrieves a list of task notes.",
+        "responses": {
+          "200": {
+            "description": "A list of task notes.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TaskNote"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Missing or invalid token."
+          }
+        }
+      }
+    },
+    "/obj/task-note/{id}": {
+      "get": {
+        "summary": "Get a specific task note",
+        "operationId": "getTaskNoteById",
+        "tags": ["Task Notes"],
+        "description": "Retrieves details for a single task note by its unique ID.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "The unique ID of the task note.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Task note details.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskNote"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Missing or invalid token."
+          },
+          "404": {
+            "description": "Task note not found."
+          }
+        }
+      }
+    },
+    "/obj/w-plan": {
+      "get": {
+        "summary": "List work plans",
+        "operationId": "listWorkPlans",
+        "tags": ["Work Plans"],
+        "description": "Retrieves a list of work plans.",
+        "responses": {
+          "200": {
+            "description": "A list of work plans.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/WorkPlan"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Missing or invalid token."
+          }
+        }
+      }
+    },
+    "/obj/w-plan/{id}": {
+      "get": {
+        "summary": "Get a specific work plan",
+        "operationId": "getWorkPlanById",
+        "tags": ["Work Plans"],
+        "description": "Retrieves details for a single work plan by its unique ID.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "The unique ID of the work plan.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Work plan details.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkPlan"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Missing or invalid token."
+          },
+          "404": {
+            "description": "Work plan not found."
+          }
+        }
+      }
+    },
+    "/obj/wp-cycle": {
+      "get": {
+        "summary": "List work plan cycles",
+        "operationId": "listWorkPlanCycles",
+        "tags": ["Work Plan Cycles"],
+        "description": "Retrieves a list of work plan cycles.",
+        "responses": {
+          "200": {
+            "description": "A list of work plan cycles.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/WorkPlanCycle"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Missing or invalid token."
+          }
+        }
+      }
+    },
+    "/obj/wp-cycle/{id}": {
+      "get": {
+        "summary": "Get a specific work plan cycle",
+        "operationId": "getWorkPlanCycleById",
+        "tags": ["Work Plan Cycles"],
+        "description": "Retrieves details for a single work plan cycle by its unique ID.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "The unique ID of the work plan cycle.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Work plan cycle details.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkPlanCycle"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Missing or invalid token."
+          },
+          "404": {
+            "description": "Work plan cycle not found."
           }
         }
       }
     }
   },
   "components": {
-    "schemas": {
-      "Plant": {
-        "required": [
-          "name"
-        ],
-        "type": "object",
-        "properties": {
-          "name": {
-            "description": "The name of the plant",
-            "type": "string"
-          },
-          "tag": {
-            "description": "Tag to specify the type",
-            "type": "string"
-          }
-        }
-      },
-      "NewPlant": {
-        "allOf": [
-          {
-            "$ref": "#/components/schemas/Plant"
-          },
-          {
-            "required": [
-              "id"
-            ],
-            "type": "object",
-            "properties": {
-              "id": {
-                "description": "Identification number of the plant",
-                "type": "integer",
-                "format": "int64"
-              }
-            }
-          }
-        ]
-      },
-      "Error": {
-        "required": [
-          "error",
-          "message"
-        ],
-        "type": "object",
-        "properties": {
-          "error": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "message": {
-            "type": "string"
-          }
-        }
-      }
-    },
     "securitySchemes": {
       "bearerAuth": {
         "type": "http",
-        "scheme": "bearer"
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "Bearer token for authentication (obtained from /wf/get-token)."
+      }
+    },
+    "schemas": {
+      "Deliverable": {
+        "type": "object",
+        "description": "Represents a deliverable item. (Schema needs to be defined based on your actual API response)",
+        "properties": {
+          "id": { "type": "string", "description": "Unique ID of the deliverable" },
+          "name": { "type": "string", "description": "Name of the deliverable" }
+          // Add more properties based on your actual deliverable object structure
+        }
+      },
+      "Task": {
+        "type": "object",
+        "description": "Represents a task item. (Schema needs to be defined based on your actual API response)",
+        "properties": {
+          "id": { "type": "string", "description": "Unique ID of the task" },
+          "title": { "type": "string", "description": "Title of the task" }
+          // Add more properties based on your actual task object structure
+        }
+      },
+      "Organization": {
+        "type": "object",
+        "description": "Represents an organization. (Schema needs to be defined based on your actual API response)",
+        "properties": {
+          "id": { "type": "string", "description": "Unique ID of the organization" },
+          "name": { "type": "string", "description": "Name of the organization" }
+        }
+      },
+      "Activity": {
+        "type": "object",
+        "description": "Represents an activity. (Schema needs to be defined based on your actual API response)",
+        "properties": {
+          "id": { "type": "string", "description": "Unique ID of the activity" },
+          "description": { "type": "string", "description": "Description of the activity" }
+        }
+      },
+      "ActivityReport": {
+        "type": "object",
+        "description": "Represents an activity report. (Schema needs to be defined based on your actual API response)",
+        "properties": {
+          "id": { "type": "string", "description": "Unique ID of the activity report" },
+          "status": { "type": "string", "description": "Status of the activity report" }
+        }
+      },
+      "DeliverablesPlan": {
+        "type": "object",
+        "description": "Represents a deliverables plan. (Schema needs to be defined based on your actual API response)",
+        "properties": {
+          "id": { "type": "string", "description": "Unique ID of the deliverables plan" },
+          "planName": { "type": "string", "description": "Name of the deliverables plan" }
+        }
+      },
+      "TaskNote": {
+        "type": "object",
+        "description": "Represents a task note. (Schema needs to be defined based on your actual API response)",
+        "properties": {
+          "id": { "type": "string", "description": "Unique ID of the task note" },
+          "content": { "type": "string", "description": "Content of the task note" }
+        }
+      },
+      "WorkPlan": {
+        "type": "object",
+        "description": "Represents a work plan. (Schema needs to be defined based on your actual API response)",
+        "properties": {
+          "id": { "type": "string", "description": "Unique ID of the work plan" },
+          "name": { "type": "string", "description": "Name of the work plan" }
+        }
+      },
+      "WorkPlanCycle": {
+        "type": "object",
+        "description": "Represents a work plan cycle. (Schema needs to be defined based on your actual API response)",
+        "properties": {
+          "id": { "type": "string", "description": "Unique ID of the work plan cycle" },
+          "cycleName": { "type": "string", "description": "Name of the work plan cycle" }
+        }
       }
     }
   }
