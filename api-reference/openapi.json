@@ -7,7 +7,7 @@
   },
   "servers": [
     {
-      "url": "https://ymanagers.com/version-test/api/1.1"
+      "url": "https://ymanagers.com/version/api/1.1"
     }
   ],
   "security": [
