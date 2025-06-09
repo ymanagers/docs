@@ -7,7 +7,7 @@
   },
   "servers": [
     {
-      "url": "https://ymanagers.com/version/api/1.1"
+      "url": "https://ymanagers.com/api/1.1"
     }
   ],
   "security": [
@@ -32,14 +32,14 @@
                   "email": {
                     "type": "string",
                     "format": "email",
-                    "example": "apiuser1@exceliant.ca",
-                    "description": "The user's email address."
+                    "example": "apiuser1@example.com",
+                    "description": "The API user's email address."
                   },
                   "password": {
                     "type": "string",
                     "format": "password",
-                    "example": "A#J88_xq",
-                    "description": "The user's password."
+                    "example": "<password>",
+                    "description": "The API user's password."
                   }
                 },
                 "required": ["email", "password"]
@@ -83,12 +83,12 @@
         }
       }
     },
-    "/obj/deliverable": {
+    "/obj/<object>": {
       "get": {
-        "summary": "List deliverables (with pagination)",
+        "summary": "List <objects> (with pagination)",
         "operationId": "listDeliverables",
         "tags": ["Deliverables"],
-        "description": "Retrieves a list of deliverables, supporting cursor-based pagination and limit.",
+        "description": "Retrieves a list of <objects>, supporting cursor-based pagination and limit.",
         "parameters": [
           {
             "name": "cursor",
@@ -115,13 +115,13 @@
         ],
         "responses": {
           "200": {
-            "description": "A list of deliverables.",
+            "description": "A list of <objects>.",
             "content": {
               "application/json": {
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/Deliverable"
+                    "$ref": "#/components/schemas/<obj>"
                   }
                 }
               }
